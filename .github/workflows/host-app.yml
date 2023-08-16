@@ -1,0 +1,43 @@
+name: Host-App Deploy
+
+on:
+  push:
+    paths:
+      - 'host-app/**'
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        working-directory: host-app
+        run: npm ci
+
+      - name: Build Host-App
+        working-directory: host-app
+        run: npm run build
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /test/host-app
+            rm -rf *
+            cp -r /github/workspace/host-app/* .
+
+# Last time I reviewed this code: August 16, 2023
